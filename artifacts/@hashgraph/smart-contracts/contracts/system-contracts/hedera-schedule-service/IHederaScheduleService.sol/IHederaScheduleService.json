@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IHederaScheduleService",
+  "sourceName": "@hashgraph/smart-contracts/contracts/system-contracts/hedera-schedule-service/IHederaScheduleService.sol",
+  "abi": [],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
