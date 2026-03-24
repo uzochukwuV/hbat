@@ -9,7 +9,7 @@
 
 import express, { Request, Response } from "express";
 import cors from "cors";
-import { OptionsAgentSession } from "./agent";
+import { OptionsAgentSession, type ChatResult } from "./agent";
 
 const app = express();
 app.use(cors());
@@ -107,11 +107,31 @@ app.post("/api/chat", async (req: Request, res: Response) => {
       ? `[User wallet: ${userAddress}] ${message}`
       : message;
 
-    const rawResponse = await session.chat(contextMessage);
+    // Use chatWithTools to get both output and tool observations
+    const result = await session.chatWithTools(contextMessage);
+    const rawResponse = result.output;
 
-    // Parse for unsigned transactions
-    const unsignedTx = extractUnsignedTx(rawResponse);
-    const cleanedResponse = cleanResponseForDisplay(rawResponse);
+    // Try to extract unsigned tx from the final output first
+    let unsignedTx = extractUnsignedTx(rawResponse);
+
+    // If not found in output, check tool outputs (LLM might have summarized)
+    if (!unsignedTx && result.toolOutputs.length > 0) {
+      for (const toolOutput of result.toolOutputs) {
+        unsignedTx = extractUnsignedTx(toolOutput);
+        if (unsignedTx) {
+          console.log("[Server] Found unsigned tx in tool output");
+          break;
+        }
+      }
+    }
+
+    // Build the display message
+    let cleanedResponse = cleanResponseForDisplay(rawResponse);
+
+    // If we found a tx in tool output but not in the response, append a note
+    if (unsignedTx && !rawResponse.includes("```unsigned-tx")) {
+      cleanedResponse += "\n\n[Transaction ready for signing]";
+    }
 
     res.json({
       message: cleanedResponse,

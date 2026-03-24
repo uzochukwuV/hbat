@@ -44,15 +44,25 @@ import { hederaKitTools } from "./tools/hederaKit";
 
 const SYSTEM_PROMPT = `You are an expert DeFi options trading assistant for the Hedera Options Vault.
 
-You have access to the following on-chain capabilities:
+## CRITICAL: ALWAYS USE TOOLS FOR OPERATIONS
+When a user asks to perform any operation (deposit, withdraw, write option, transfer, etc.), you MUST call the appropriate tool. NEVER just describe what the transaction would look like - always invoke the actual tool to generate the real unsigned transaction.
 
-## Options Vault Tools:
+For example:
+- "Deposit 100 HBAR" → MUST call deposit_hbar tool with amount=100
+- "Write a call option" → MUST call write_option tool
+- "Check my balance" → MUST call get_hbar_balance tool
+
+The tools return the actual unsigned transaction data that the user's wallet will sign. If you don't call the tool, the user cannot execute the transaction.
+
+## Available Tools:
+
+### Options Vault Tools:
 1. **get_option_price** — Quote Black-Scholes premium + Greeks (Δ, Γ, ν, θ, ρ) using live Pyth prices
 2. **write_option** — Write (sell) covered calls or cash-secured puts
 3. **exercise_option** — Exercise in-the-money options for cash settlement
 4. **vault_status** — Check live Pyth prices, collateral balances, and open positions
 
-## Hedera Tools (Native Operations):
+### Hedera Tools (Native Operations):
 5. **get_hbar_balance** — Check HBAR balance for any account (read-only)
 6. **get_account_info** — Get account details including EVM address (read-only)
 7. **transfer_hbar** — Build unsigned HBAR transfer tx
@@ -60,7 +70,7 @@ You have access to the following on-chain capabilities:
 9. **withdraw_collateral** — Build unsigned tx to withdraw collateral
 
 ## Security Model:
-- **All write operations return UNSIGNED transactions**
+- **All write operations return UNSIGNED transactions** wrapped in \`\`\`unsigned-tx code blocks
 - User signs with their own wallet (HashPack, MetaMask, Blade)
 - Backend NEVER handles user private keys
 - Read operations use Mirror Node API (no signing)
@@ -94,6 +104,8 @@ When users ask about options:
 3. Warn about out-of-the-money risks
 4. Highlight Hedera's unique advantages (fixed fees, HIP-1215 automation, Pyth integration)
 5. For write operations, confirm collateral sufficiency first via vault_status
+
+IMPORTANT: Your response should include the exact output from the tools, especially the \`\`\`unsigned-tx blocks. Don't summarize or reformat them - the frontend parses these blocks to extract the transaction.
 
 Respond concisely. Use tables and structured output for Greeks/quotes.`;
 
@@ -191,6 +203,11 @@ export async function createOptionsAgent(): Promise<AgentExecutor> {
 
 // ── Conversation Manager ──────────────────────────────────────────────────────
 
+export interface ChatResult {
+  output: string;
+  toolOutputs: string[];
+}
+
 export class OptionsAgentSession {
   private executor!: AgentExecutor;
   private chatHistory: Array<HumanMessage | AIMessage> = [];
@@ -201,20 +218,37 @@ export class OptionsAgentSession {
     console.log("[Session] init done");
   }
 
+  /**
+   * Simple chat method - returns just the output string
+   */
   async chat(userMessage: string): Promise<string> {
+    const result = await this.chatWithTools(userMessage);
+    return result.output;
+  }
+
+  /**
+   * Chat with full tool output access - returns output and all tool observations
+   */
+  async chatWithTools(userMessage: string): Promise<ChatResult> {
     const result = await this.executor.call({
       input:        userMessage,
       chat_history: this.chatHistory,
       agent_scratchpad: [],
     });
 
-    // Log tools used and their outputs
+    const toolOutputs: string[] = [];
+
+    // Log tools used and collect their outputs
     if (result.intermediateSteps && result.intermediateSteps.length > 0) {
       console.log(`[Agent] Tools used in this interaction:`);
       for (const step of result.intermediateSteps) {
         console.log(`  🔧 ${step.action.tool}(${JSON.stringify(step.action.toolInput)})`);
         console.log(`     → ${step.observation}`);
         console.log("");
+        // Collect tool outputs for transaction extraction
+        if (step.observation) {
+          toolOutputs.push(step.observation);
+        }
       }
     }
 
@@ -225,7 +259,10 @@ export class OptionsAgentSession {
       this.chatHistory = this.chatHistory.slice(-20);
     }
 
-    return result.output as string;
+    return {
+      output: result.output as string,
+      toolOutputs,
+    };
   }
 
   clearHistory(): void {

@@ -34,6 +34,7 @@ async function fetchMirrorNode(path: string): Promise<unknown> {
 export const getHbarBalanceTool = tool(
   async ({ accountId }) => {
     try {
+      console.log(`[getHbarBalanceTool] Fetching balance for account: ${accountId}`);
       const data = await fetchMirrorNode(`/api/v1/accounts/${accountId}`) as {
         account: string;
         balance: { balance: number };
@@ -72,6 +73,7 @@ export const getHbarBalanceTool = tool(
 export const getAccountInfoTool = tool(
   async ({ accountId }) => {
     try {
+      console.log(`[getAccountInfoTool] Fetching info for account: ${accountId}`);
       const data = await fetchMirrorNode(`/api/v1/accounts/${accountId}`) as {
         account: string;
         evm_address: string;
@@ -118,6 +120,7 @@ export const getAccountInfoTool = tool(
 export const transferHbarTool = tool(
   async ({ toAccountId, amount }) => {
     try {
+      console.log(`[transferHbarTool] Building transfer: ${amount} HBAR to ${toAccountId}`);
       // Resolve destination to EVM address if needed
       let toAddress = toAccountId;
       if (toAccountId.startsWith("0.0.")) {
@@ -179,6 +182,7 @@ export const transferHbarTool = tool(
 export const depositHbarTool = tool(
   async ({ amount }) => {
     try {
+      console.log(`[depositHbarTool] Building deposit: ${amount} HBAR to vault`);
       if (!OPTIONS_VAULT_ADDRESS) {
         return "Error: OPTIONS_VAULT_ADDRESS not configured. Deploy the vault first.";
       }
@@ -229,6 +233,7 @@ export const depositHbarTool = tool(
 export const withdrawCollateralTool = tool(
   async ({ amount }) => {
     try {
+      console.log(`[withdrawCollateralTool] Building withdrawal: ${amount} HBAR from vault`);
       if (!OPTIONS_VAULT_ADDRESS) {
         return "Error: OPTIONS_VAULT_ADDRESS not configured.";
       }
