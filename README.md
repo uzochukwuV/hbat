@@ -18,11 +18,13 @@ A fully on-chain options protocol where:
 
 ## Live Deployment (Hedera Testnet — Chain ID 296)
 
-| Contract | Address |
-|----------|---------|
-| OptionsVault | `0x2c8926FbF96f902798f9602CDBeb099659C095aF` |
-| OptionToken (ERC-721) | `0xB84C25D2389B08465A4891660bffc0fd93a69745` |
-| Pyth Oracle | `0xa2aa501b19aff244d90cc15a4cf739d2725b5729` |
+| Contract | Address | Contract ID |
+|----------|---------|-------------|
+| OptionsVault | `0xd4C7B5D38ca256702455D87eC11b36101C68e2d3` | `0.0.8344471` |
+| OptionToken (ERC-721) | `0x3225e38c79d09765348cbbc35b792152Fc5e6B8C` | `0.0.8344472` |
+| Pyth Oracle | `0xa2aa501b19aff244d90cc15a4cf739d2725b5729` | (Pyth deployed) |
+
+**Testnet Account:** `0.0.5964482`
 
 ---
 
@@ -145,11 +147,39 @@ npm test          # 23 unit tests, all passing on hardhat local
 npm run deploy:testnet
 ```
 
-### 5. Start the AI Agent
+### 5. Start the AI Agent API
 
 ```bash
-npm run agent
+cd agent
+npm run agent:api   # Starts on http://localhost:3001
 ```
+
+### 6. Start the Frontend
+
+```bash
+cd client/frontend
+npm run dev         # Starts on http://localhost:3000
+```
+
+### 7. Connect & Trade
+
+1. Open http://localhost:3000
+2. Click "Connect Wallet" and connect HashPack (Hedera Testnet)
+3. Use the AI chat panel (bottom-right corner):
+   - "Deposit 100 HBAR as collateral"
+   - "Write a HBAR call at $0.10 for 10 HBAR"
+4. Approve transactions in HashPack
+
+---
+
+## Frontend Features
+
+- **Real-time price charts** using Pyth Network feeds
+- **AI chat panel** for natural language trading
+- **Transaction modal** with HashPack signing
+- **Positions tracker** showing open options
+- **Trade history** with HashScan links
+- **Option chain** visualization
 
 Example conversation:
 

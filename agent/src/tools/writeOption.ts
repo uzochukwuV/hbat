@@ -89,14 +89,15 @@ export const writeOptionTool = tool(
         maxPremWad,
       ]);
 
-      // 0.1 HBAR covers the Pyth update fee + option premium; excess is refunded by the vault
-      const valueWei = ethers.parseEther("0.1").toString();
+      // 1 HBAR covers the Pyth update fee + buffer; excess is refunded by the vault
+      // Pyth fee can be up to 0.5 HBAR on Hedera testnet
+      const valueWei = ethers.parseEther("1").toString();
 
       const unsignedTx = {
         to:       vault.target as string,
         data:     calldata,
         value:    valueWei,  // in wei (1e-18 HBAR units)
-        gasLimit: 1_000_000,
+        gasLimit: 2_000_000, // Higher gas for Pyth update + contract execution
       };
 
       return [
