@@ -105,7 +105,8 @@ export function usePortfolio(userAddress: string | null) {
 
       // Combine and dedupe events
       const allEvents = [...writerEvents, ...buyerEvents];
-      const tokenIds = [...new Set(allEvents.map((e) => Number(e.args?.tokenId)))];
+      console.log(`Fetched ${allEvents.length} option events for user ${userAddress}`, allEvents);
+      const tokenIds = [...new Set(allEvents.map((e) => Number(e.topics[1])))];
 
       // Fetch position details for each token
       const positionPromises = tokenIds.map(async (tokenId) => {

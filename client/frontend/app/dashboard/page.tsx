@@ -10,6 +10,8 @@ import { OptionType } from "@/lib/contracts";
 import { ethers } from "ethers";
 import type { UnsignedTransaction } from "@/types";
 
+export const dynamic = 'force-dynamic';
+
 // Simple price formatter
 const formatPrice = (price: number | null | undefined): string => {
   if (price === null || price === undefined) return "--";
